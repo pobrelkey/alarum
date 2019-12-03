@@ -16,7 +16,7 @@ I wrote it as a minimal viable solution solely to meet my own needs; little effo
 
 ### Installation/Usage
 
-You'll first need to install the VLC and Termux apps, and the [`sox`](http://sox.sourceforge.net/) and [`pv`](https://www.ivarch.com/programs/pv.shtml) Termux packages.
+You'll first need to install the VLC and Termux apps, and the [`sox`](http://sox.sourceforge.net/) and [`pv`](https://www.ivarch.com/programs/pv.shtml) Termux packages (in Termux run: `pkg install sox pv`).
 
 Download the script to somehere on your phone you can easily run it from a Termux prompt, make it executable (`chmod +x`), then run it and point your web browser to: `http://127.0.0.1:3999/`  The UI should be self-explanatory: input a wake-up time as four digits, optionally separating hour and minute with a colon; select a radio station to wake up to, if any; and submit the form, whence the server will return a playlist file which should launch VLC.  (VLC will then make a separate HTTP request to the server to get the actual audio stream.)
 
