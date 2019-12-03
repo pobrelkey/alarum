@@ -22,11 +22,15 @@ Download the script to somehere on your phone you can easily run it from a Termu
 
 ### Caveats
 
-The path to the alarm tone is valid on my phone (on [LineageOS](https://www.lineageos.org/) 15), and may or may not be valid on yours - or you may want to wake up to a different alarm tone than the default.  In either case, you'll need to edit the script as appropriate.
+The path to the alarm tone in the script is valid on my phone (on [LineageOS](https://www.lineageos.org/) 15), and may or may not be valid on yours - or you may want to wake up to a different alarm tone than the default.  In either case, you'll need to edit the script as appropriate.
 
 The list of available radio stations represents my own personal preferences.  Feel free to edit the script to add your own favorites; note that your intended radio station(s) will need to support plain (Icecast-style) HTTP streaming.
 
 Finally: you'll need Internet connectivity to use this script, even if you don't elect to stream a radio station at wake time, as Android switches off the networking stack entirely (even for loopback) if you have no mobile data signal and no wifi.  Blame Google for this ~~braindead nonsense~~ feature, not me.
+
+### Hardware
+
+I used [Plugfones](https://www.plugfones.com/) corded in-ear headphones with this app.  They're my usual commuting headphones - compact, inexpensive and lightweight (13g a pair), they provide 27db of ambient noise reduction, and comfortably stay in your ears while you sleep.  Audiophiles will probably sniff at the sound quality though.  I considered these so critical to a good night's sleep, and thus my journey, that I carried a spare pair in case my primary pair failed or went missing (which I duly needed to deploy before my Camino was half finished).
 
 ### License
 
