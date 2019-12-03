@@ -4,7 +4,7 @@ A streaming-audio white noise generator and alarm clock for your Android phone, 
 
 ### What?!
 
-For my 800km hike on the [Camino Francés](https://en.m.wikipedia.org/wiki/French_Way) (great fun, you should go), I needed a headphones-only alarm clock for staying in hostels - one which plays white noise over the headphones all night to block out ~~snorers~~ ambient noise, then sounds the alarm over headphones only so as not to wake other ~~snorers~~ guests.  I couldn't find any [libre](https://en.wikipedia.org/wiki/Libre_software) Android apps which would do this, so I lashed together this minimal, Unix-y solution over a lazy evening or two.
+For my 800km hike on the [Camino Francés](https://en.wikipedia.org/wiki/French_Way) (great fun, you should go), I needed a headphones-only alarm clock for staying in hostels - one which plays white noise over the headphones all night to block out ~~snorers~~ ambient noise, then sounds the alarm over headphones only so as not to wake other ~~snorers~~ guests.  I couldn't find any [libre](https://en.wikipedia.org/wiki/Libre_software) Android apps which would do this, so I lashed together this minimal, Unix-y solution over a lazy evening or two.
 
 This script runs under [Termux](https://termux.com/), and exposes a web server on localhost port 3999, serving up a very simple (HTML 3.2) UI.  You use this to launch [VLC](https://www.videolan.org/vlc/download-android.html) to play a stream of white noise until your desired wake time, at which point it fades into the internet radio station of your choice (or failing that, an alarm tone).
 
