@@ -26,18 +26,25 @@
 #
 
 
+# User-tweakable parameters...
 LISTEN_PORT=3999
+TONE_FREQUENCY=2000
+SNOOZE_MINS=10
 
-if [ "${1}" != '--inetd' ]
-then
-	echo "Listening on port ${LISTEN_PORT}"
-	exec busybox nc -ll -p ${LISTEN_PORT} -e "${0}" --inetd
-fi
-
+# look for alarm tone in same directory as script (for off-phone development)
 ALARM_TONE="$(dirname -- "${0}")/hassium.ogg"
 if [ \! -e ${ALARM_TONE} ]
 then
 	ALARM_TONE=/system/media/audio/alarms/Hassium.ogg
+fi
+
+
+# If manually invoked, spawn a TCP server which will then re-invoke the script
+# inetd-style, i.e. with standard input/output piped to the TCP connection.
+if [ "${1}" != '--inetd' ]
+then
+	echo "Listening on port ${LISTEN_PORT}"
+	exec busybox nc -ll -p ${LISTEN_PORT} -e "${0}" --inetd
 fi
 
 # read HTTP headers, ignore all but the URI
@@ -47,7 +54,6 @@ while [ "x${HEADER}" != 'x' ]
 do
 	read -t 0.1 HEADER
 done
-
 if [ "${METHOD}" != 'GET' ]
 then
 	echo -ne "HTTP/1.0 501 Unsupported Method\015\012"
@@ -60,10 +66,12 @@ then
 fi
 
 
+# Serve up different content, depending on the URI pattern:
 case ${URI} in
 	/playlist*)
-		DELAY_MINS=10
-		DELAY_SECS=$(( ${DELAY_MINS} * 60 ))
+		# Serve up a .pls style playlist which will prompt VLC
+		# to open the actual audio stream.
+		DELAY_SECS=$(( ${SNOOZE_MINS} * 60 ))
 		TIME="$(sed -nr -e '/[?&]time=[0-9]/{s/^.*[?&]time=(([0-9]|%3[Aa])+).*$/\1/;s/%3[Aa]/:/;p;q}' <<<"${URI}")"
 		STATION=$(sed -nr -e '/[?&]station=[0-9]/{s/^.*[?&]station=([0-9]+).*$/\1/;p;q}' <<<"${URI}")
 		echo -ne "HTTP/1.0 200 OK\015\012"
@@ -77,15 +85,15 @@ case ${URI} in
 			File1=/stream?time=${TIME}&station=${STATION}
 			Title1=Alarm set for ${TIME}
 			File2=/stream?delay=${DELAY_SECS}&station=${STATION}
-			Title2=Snooze for ${DELAY_MINS} minutes
+			Title2=Snooze for ${SNOOZE_MINS} minutes
 			File3=/stream?delay=${DELAY_SECS}&station=${STATION}&snooze=2
-			Title3=Second snooze for ${DELAY_MINS} minutes
+			Title3=Second snooze for ${SNOOZE_MINS} minutes
 			File4=/stream?delay=${DELAY_SECS}&station=${STATION}&snooze=3
-			Title4=Third snooze for ${DELAY_MINS} minutes
+			Title4=Third snooze for ${SNOOZE_MINS} minutes
 			File5=/stream?delay=${DELAY_SECS}&station=${STATION}&snooze=4
-			Title5=Fourth snooze for ${DELAY_MINS} minutes
+			Title5=Fourth snooze for ${SNOOZE_MINS} minutes
 			File6=/stream?delay=${DELAY_SECS}&station=${STATION}&snooze=5
-			Title6=Fifth snooze for ${DELAY_MINS} minutes
+			Title6=Fifth snooze for ${SNOOZE_MINS} minutes
 			File7=/stream?delay=0&station=${STATION}&snooze=6
 			Title7=Oh just wake up already!
 			File8=/stream?delay=0&station=${STATION}&snooze=7
@@ -108,6 +116,8 @@ case ${URI} in
 		;;
 
 	/stream*)
+		# Generate and serve the actual audio stream to VLC.
+		# First, use sed to parse form arguments...
 		DELAY=$(sed -nr -e '/[?&]delay=[0-9]/{s/^.*[?&]delay=([0-9]+).*$/\1/;p;q}' <<<"${URI}")
 		if [ "x${DELAY}" == 'x' ] || [ "${DELAY}" -le 0 ] || [ "${DELAY}" -gt $(( 16 * 3600 )) ]
 		then
@@ -124,9 +134,9 @@ case ${URI} in
 				DELAY=$(( (86400 + "${DAYSECS}" - "${NOWSECS}") % 86400 ))
 			fi
 		fi
-		if [ "x${DELAY}" == 'x' ] || [ "${DELAY}" -le 0 ] || [ "${DELAY}" -gt $(( 16 * 3600 )) ]
+		if [ "x${DELAY}" == 'x' ] || [ "${DELAY}" -lt 15 ] || [ "${DELAY}" -gt $(( 16 * 3600 )) ]
 		then
-			DELAY=0
+			DELAY=15
 		fi
 		
 		STATION=$(sed -nr -e '/[?&]station=[0-9]/{s/^.*[?&]station=([0-9]+).*$/\1/;p;q}' <<<"${URI}")
@@ -147,7 +157,6 @@ case ${URI} in
 				;;
 			0)
 				STATION_URL='http://bbcwssc.ic.llnwd.net/stream/bbcwssc_mp1_ws-einws'
-				#STATION_URL='http://bbcwssc.ic.llnwd.net/stream/bbcwssc_mp1_ws-eieuk'
 				;;
 		esac
 		
@@ -159,11 +168,6 @@ case ${URI} in
 		
 		SENSIBLE_RAW="-t raw -r 44100 -e signed -b 16 -c 2"
 
-		if [ "${DELAY}" -lt 15 ]
-		then
-			DELAY=15
-		fi
-
 		(
 			# what will we want to play for the last 15 seconds of the delay?
 			if [ "${DELAY}" -gt 15 ]
@@ -172,20 +176,20 @@ case ${URI} in
 				DELAY_SYNTH_ARGS="brownnoise highpass 100"
 
 				# Now play the "long bit" of the delay (what we sleep to)...
-				# Note that we rate-limit this to "real time" so that VLC doesn't
-				# buffer hours of the radio stream opened in the next step.
+				# Note that we use pv to rate-limit this to "real time" so that
+				# VLC doesn't buffer hours of the radio stream opened next.
 				(
 					# start with one second of sine tone as a stream-start indicator
-					sox -q -n ${SENSIBLE_RAW} - synth 1 sine "$(date +%Y)" vol -15 dB
+					sox -q -n ${SENSIBLE_RAW} - synth 1 sine "${TONE_FREQUENCY}" vol -15 dB
 					# ...then spew brown noise
 					sox -q -n ${SENSIBLE_RAW} - synth $(( ${DELAY} - 15 )) ${DELAY_SYNTH_ARGS}
 				) | pv --quiet --rate-limit $(( 44100 * 4 ))
 			else
 				# if less than 15 seconds delay, just play the sine tone
-				DELAY_SYNTH_ARGS="sine $(date +%Y) vol -15 dB"
+				DELAY_SYNTH_ARGS="sine ${TONE_FREQUENCY} vol -15 dB"
 			fi
 
-			# play the last 15 seconds of the delay, fading into the alarm tone/radio		
+			# play the last 15 seconds of the delay, fading into the alarm tone/radio
 			sox -q \
 				${SENSIBLE_RAW} <(sox -q -n ${SENSIBLE_RAW} - synth 15 ${DELAY_SYNTH_ARGS}) \
 				${SENSIBLE_RAW} <(
@@ -198,10 +202,13 @@ case ${URI} in
 					sox -q "${ALARM_TONE}" ${SENSIBLE_RAW} - rate 44100 channels 2 repeat 999
 				) \
 				${SENSIBLE_RAW} - splice -q 15,3
+
+		# pipe the stream out to VLC as uncompressed FLAC
 		) | sox -q ${SENSIBLE_RAW} - -t flac -C 0 - rate 44100 channels 2
 		;;
 
 	*)
+		# Serve up the static-HTML user interface.
 		echo -ne "HTTP/1.0 200 OK\015\012"
 		echo -ne "Content-type: text/html\015\012"
 		echo -ne "Pragma: no-cache\015\012"
