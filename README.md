@@ -12,7 +12,7 @@ This bash script runs under [Termux](https://termux.com/), and implements a web 
 
 **This script is almost certainly not for you if you don't understand shell scripting and/or wouldn't already have Termux installed on your phone anyway.**
 
-I wrote it as a minimal viable solution solely to meet my own needs; little effort was made to present a polished user interface or configuration experience.  As I don't need to add features for myself, and won't be maintaining or supporting this script for other users, you are heartily encouraged to fork and customize this script to add your own customizations.
+I wrote it as a minimal viable solution solely to meet my own needs; little effort was made to present a polished user interface or configuration experience.  As I don't need to add features for myself, and won't be maintaining or supporting this script for other users, you are heartily encouraged to fork this script and customize it to your tastes.
 
 ### Installation/Usage
 
