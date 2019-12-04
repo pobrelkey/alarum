@@ -71,7 +71,8 @@ case ${URI} in
 	/playlist*)
 		# Serve up a .pls style playlist which will prompt VLC
 		# to open the actual audio stream.
-		DELAY_SECS=$(( ${SNOOZE_MINS} * 60 ))
+		# If client "skips to next track", snooze for SNOOZE_MINS minutes.
+		SNOOZE_SECS=$(( ${SNOOZE_MINS} * 60 ))
 		TIME="$(sed -nr -e '/[?&]time=[0-9]/{s/^.*[?&]time=(([0-9]|%3[Aa])+).*$/\1/;s/%3[Aa]/:/;p;q}' <<<"${URI}")"
 		STATION=$(sed -nr -e '/[?&]station=[0-9]/{s/^.*[?&]station=([0-9]+).*$/\1/;p;q}' <<<"${URI}")
 		echo -ne "HTTP/1.0 200 OK\015\012"
@@ -84,15 +85,15 @@ case ${URI} in
 			NumberOfEntries=15
 			File1=/stream?time=${TIME}&station=${STATION}
 			Title1=Alarm set for ${TIME}
-			File2=/stream?delay=${DELAY_SECS}&station=${STATION}
+			File2=/stream?delay=${SNOOZE_SECS}&station=${STATION}
 			Title2=Snooze for ${SNOOZE_MINS} minutes
-			File3=/stream?delay=${DELAY_SECS}&station=${STATION}&snooze=2
+			File3=/stream?delay=${SNOOZE_SECS}&station=${STATION}&snooze=2
 			Title3=Second snooze for ${SNOOZE_MINS} minutes
-			File4=/stream?delay=${DELAY_SECS}&station=${STATION}&snooze=3
+			File4=/stream?delay=${SNOOZE_SECS}&station=${STATION}&snooze=3
 			Title4=Third snooze for ${SNOOZE_MINS} minutes
-			File5=/stream?delay=${DELAY_SECS}&station=${STATION}&snooze=4
+			File5=/stream?delay=${SNOOZE_SECS}&station=${STATION}&snooze=4
 			Title5=Fourth snooze for ${SNOOZE_MINS} minutes
-			File6=/stream?delay=${DELAY_SECS}&station=${STATION}&snooze=5
+			File6=/stream?delay=${SNOOZE_SECS}&station=${STATION}&snooze=5
 			Title6=Fifth snooze for ${SNOOZE_MINS} minutes
 			File7=/stream?delay=0&station=${STATION}&snooze=6
 			Title7=Oh just wake up already!
@@ -175,7 +176,7 @@ case ${URI} in
 				# if long delay, we'll be fading up from conditioned brown noise
 				DELAY_SYNTH_ARGS="brownnoise highpass 100"
 
-				# Now play the "long bit" of the delay (what we sleep to)...
+				# But first, play the "long bit" of the delay (what we sleep to)...
 				# Note that we use pv to rate-limit this to "real time" so that
 				# VLC doesn't buffer hours of the radio stream opened next.
 				(
